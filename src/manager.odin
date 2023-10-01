@@ -35,48 +35,48 @@ Manager_new :: proc
 ) -> Manager
 {
 
-	manager := Manager {
-		_gameFont,
-		_screenWidth,
-		_screenHeight,
-		_lastUpdateTime,
-		_lastDrawTime,
-		make(EntityMap)
-	}
+    manager := Manager {
+        _gameFont,
+        _screenWidth,
+        _screenHeight,
+        _lastUpdateTime,
+        _lastDrawTime,
+        make(EntityMap)
+    }
 
-	return manager
+    return manager
 }
 
 Manager_addEntity :: proc
 (
-	_manager: ^Manager,
-	_entity: ^Entity,
+    _manager: ^Manager,
+    _entity: ^Entity,
 )
 {
-	_manager^.entities[_entity^.id] = _entity 
+    _manager^.entities[_entity^.id] = _entity 
 }
 
 Manager_update :: proc
 (
-	_manager: ^Manager,
-	_dt: f32,
+    _manager: ^Manager,
+    _dt: f32,
 )
 {
-	for id in _manager^.entities
-	{
-		entity := _manager^.entities[id]
-		Entity_update(entity, _manager, _dt)
-	}
+    for id in _manager^.entities
+    {
+        entity := _manager^.entities[id]
+        Entity_update(entity, _manager, _dt)
+    }
 }
 
 Manager_draw :: proc
 (
-	_manager: ^Manager,
+    _manager: ^Manager,
 )
 {
-	for id in _manager^.entities
-	{
-		entity := _manager^.entities[id]
-		Entity_draw(entity)
-	}
+    for id in _manager^.entities
+    {
+        entity := _manager^.entities[id]
+        Entity_draw(entity)
+    }
 }
