@@ -31,23 +31,6 @@ Unit_draw :: proc(_unit: ^Unit)
 
 Unit_update :: proc(_unit: ^Unit, _manager: ^Manager, _dt: f32)
 {
-    // if (rl.IsKeyDown(rl.KeyboardKey.RIGHT) || rl.IsKeyDown(rl.KeyboardKey.D))
-    // {
-    //     _unit^.position.x += 0.1 * _dt;
-    // }
-    // if (rl.IsKeyDown(rl.KeyboardKey.LEFT) || rl.IsKeyDown(rl.KeyboardKey.A))
-    // {
-    //     _unit^.position.x -= 0.1 * _dt
-    // }
-    // if (rl.IsKeyDown(rl.KeyboardKey.UP) || rl.IsKeyDown(rl.KeyboardKey.W))
-    // {
-    //     _unit^.position.z -= 0.1 * _dt;
-    // }
-    // if (rl.IsKeyDown(rl.KeyboardKey.DOWN) || rl.IsKeyDown(rl.KeyboardKey.S))
-    // {
-    //     _unit^.position.z += 0.1 * _dt;
-    // }
-
     _unit^.lastPosition = _unit^.position
 
     if (_unit^.moving)

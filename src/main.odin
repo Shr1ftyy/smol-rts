@@ -3,6 +3,8 @@ package main
 import rl "vendor:raylib"
 import fmt "core:fmt"
 import time "core:time"
+import rand "core:math/rand"
+
 
 main :: proc()
 {
@@ -30,14 +32,18 @@ main :: proc()
         camera
     )
 
-    u := new(Unit)
 
-    u^ = Unit_new(
-        {3.0, 3.0, 3.0},
-        {0.0, 3.0, 0.0},
-    )
+    for i := 0; i < 10; i += 1
+    {
+        u := new(Unit)
 
-    Manager_addEntity(&gameManager, u)
+        u^ = Unit_new(
+            {3.0, 3.0, 3.0},
+            {rand.float32() * 25, 3.0, rand.float32() * 25},
+        )
+
+        Manager_addEntity(&gameManager, u)
+    }
 
     rl.SetTargetFPS(120)
     for !rl.WindowShouldClose() 

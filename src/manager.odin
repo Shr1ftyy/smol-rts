@@ -116,21 +116,6 @@ Manager_update :: proc
         {
             _manager.selectionRect.y = _manager^.selectionEnd.y
         }
-        // corner0 := rl.Vector2{_manager^.selectionRect.x, _manager^.selectionRect.y}
-        // corner1 := rl.Vector2{_manager^.selectionRect.x + abs(xOffset), _manager^.selectionRect.y}
-        // corner2 := rl.Vector2{_manager^.selectionRect.x + abs(xOffset), _manager^.selectionRect.y + abs(yOffset)}
-        // corner3 := rl.Vector2{_manager^.selectionRect.x, _manager^.selectionRect.y + abs(yOffset)}
-
-        // ray0 := rl.GetMouseRay(corner0, _manager^.camera);
-        // ray1 := rl.GetMouseRay(corner1, _manager^.camera);
-        // ray2 := rl.GetMouseRay(corner2, _manager^.camera);
-        // ray3 := rl.GetMouseRay(corner3, _manager^.camera);
-
-        // rl.DrawRay(ray0, rl.PURPLE) 
-        // rl.DrawRay(ray1, rl.PURPLE) 
-        // rl.DrawRay(ray2, rl.PURPLE) 
-        // rl.DrawRay(ray3, rl.PURPLE)  
-
     }    
     else if (!rl.IsMouseButtonDown(rl.MouseButton.LEFT))
     {
