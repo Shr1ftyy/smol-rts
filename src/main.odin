@@ -16,7 +16,7 @@ main :: proc()
 
     screenWidth := 1280
     screenHeight := 720
-    camera := rl.Camera{ { 0.0, 75.0, 100.0 }, { 0.0, 0.0, 0.0 }, { 0.0, 1.0, 0.0 }, 45.0, rl.CameraProjection.PERSPECTIVE }
+    camera := rl.Camera{ { 0.0, 50.0, 50.0 }, { 0.0, 0.0, 0.0 }, { 0.0, 1.0, 0.0 }, 90.0, rl.CameraProjection.PERSPECTIVE }
 
 
     lastTime: f64 = time.duration_milliseconds(transmute(time.Duration)time.now()._nsec)
@@ -27,21 +27,23 @@ main :: proc()
         screenHeight,
         lastTime,
         lastTime,
+        camera
     )
 
-    e := Entity_new(
+    u := new(Unit)
+
+    u^ = Unit_new(
         {3.0, 3.0, 3.0},
         {0.0, 3.0, 0.0},
-        EntityType.PLAYER_TYPE,
     )
 
-    Manager_addEntity(&gameManager, &e)
+    Manager_addEntity(&gameManager, u)
 
     rl.SetTargetFPS(120)
     for !rl.WindowShouldClose() 
     {
         rl.BeginDrawing()
-        rl.BeginMode3D(camera)
+        rl.BeginMode3D(gameManager.camera)
 
         
         bgColor := rl.Color{8, 36, 52, 255}
@@ -53,16 +55,18 @@ main :: proc()
         dt: f64 = now - lastTime
         lastTime = now
 
-
         // Update
         Manager_update(&gameManager, f32(dt))
 
         // Draw
         Manager_draw(&gameManager)
-        rl.DrawFPS(10, 10)
-
         // fmt.println(e)
         rl.EndMode3D()
+        rl.DrawFPS(5, 5)
+
+        rl.DrawRectangleLinesEx(gameManager.selectionRect, 2, rl.YELLOW)
+
+
         rl.EndDrawing()
     }
 

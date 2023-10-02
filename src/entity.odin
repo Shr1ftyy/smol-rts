@@ -4,7 +4,7 @@ import rl "vendor:raylib"
 
 EntityType :: enum
 {
-    PLAYER_TYPE,
+    UNIT,
     PLAYER_BULLET,
     ENEMY_TYPE,
     ENEMY_BULLET,
@@ -24,11 +24,18 @@ Entity :: struct
 EntityId :: distinct uint
 EntityMap :: distinct map[EntityId]^Entity
 
-Entity_new :: proc(_hitboxDims: rl.Vector3, _origin: rl.Vector3, _entityType: EntityType) -> Entity
+EntityId_getID :: proc() -> EntityId
 {
     @(static) _newId: EntityId = 0
-    e := Entity{_newId, _hitboxDims, _origin, _entityType, false}
+    id := _newId
     _newId += 1
+    return id
+}
+
+Entity_new :: proc(_hitboxDims: rl.Vector3, _origin: rl.Vector3, _entityType: EntityType) -> Entity
+{
+    _newId := EntityId_getID()
+    e := Entity{_newId, _hitboxDims, _origin, _entityType, false}
 
     return e
 }
@@ -36,8 +43,8 @@ Entity_new :: proc(_hitboxDims: rl.Vector3, _origin: rl.Vector3, _entityType: En
 Entity_draw :: proc(_entity: ^Entity)
 {
 
-    rl.DrawCube(_entity^.position, _entity^.hitboxDims.x, _entity^.hitboxDims.y, _entity^.hitboxDims.z, rl.GREEN)
-    rl.DrawCubeWires(_entity^.position, _entity^.hitboxDims.x, _entity^.hitboxDims.y, _entity^.hitboxDims.z, rl.BLUE)
+    rl.DrawCube(_entity^.position, _entity^.hitboxDims.x, _entity^.hitboxDims.y, _entity^.hitboxDims.z, rl.RED)
+    // rl.DrawCubeWires(_entity^.position, _entity^.hitboxDims.x, _entity^.hitboxDims.y, _entity^.hitboxDims.z, rl.BLUE)
 }
 
 Entity_update :: proc(_entity: ^Entity, _manager: ^Manager, _dt: f32)
@@ -58,4 +65,10 @@ Entity_update :: proc(_entity: ^Entity, _manager: ^Manager, _dt: f32)
     {
         _entity^.position.z += 0.1 * _dt;
     }
+
+    if (rl.IsMouseButtonDown(rl.MouseButton.RIGHT))
+    {
+
+    }
+
 }
