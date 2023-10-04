@@ -1,0 +1,11 @@
+Model Information:
+* title:	Jester Butane Reworked
+* source:	https://sketchfab.com/3d-models/jester-butane-reworked-3a661ebc42a047e396c77ae214fde459
+* author:	Swiss_Fox (https://sketchfab.com/Swiss_Fox)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Jester Butane Reworked" (https://sketchfab.com/3d-models/jester-butane-reworked-3a661ebc42a047e396c77ae214fde459) by Swiss_Fox (https://sketchfab.com/Swiss_Fox) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

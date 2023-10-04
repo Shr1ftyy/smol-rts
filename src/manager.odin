@@ -25,7 +25,9 @@ Manager :: struct
     xVec: rl.Vector3,
     yVec: rl.Vector3,
     zVec: rl.Vector3,
-    groundDims: rl.Rectangle
+    groundDims: rl.Rectangle,
+    level: rl.Model,
+    levelScale: f32
 };
 
 // rl.LoadFontEx("resources/fonts/CascadiaCode/CascadiaCode.ttf", 20, 0, 250);
@@ -38,9 +40,10 @@ Manager_new :: proc
     _lastUpdateTime: f64,
     _lastDrawTime: f64,
     _camera: rl.Camera,
+    _level: rl.Model,
+    _levelScale: f32
 ) -> Manager
 {
-
     manager := Manager {
         _gameFont,
         _screenWidth,
@@ -57,8 +60,15 @@ Manager_new :: proc
         rl.Vector3{0.0, 0.0, 0.0},
         rl.Vector3{0.0, 0.0, 0.0},
         rl.Vector3{0.0, 0.0, 0.0},
-        rl.Rectangle{0.0, 0.0, 100.0, 100.0}
+        rl.Rectangle{0.0, 0.0, 100.0, 100.0},
+        _level,
+        _levelScale
     }
+
+    // manager.level.transform[0][0] *= _levelScale
+    // manager.level.transform[1][1] *= _levelScale
+    // manager.llevel.transform[2][2] *= _levelScale
+
 
     return manager
 }
@@ -71,9 +81,7 @@ Manager_addEntity :: proc
 {
     _manager^.entities[_entity^.id] = _entity 
 }
-
-Manager_deleteEntity :: proc
-(
+ Manager_deleteEntity :: proc (
     _manager: ^Manager,
     _entity: ^Entity,
 )
@@ -88,6 +96,26 @@ Manager_update :: proc
 )
 {
     // rl.UpdateCamera(&(_manager^.camera), rl.CameraMode.FIRST_PERSON)
+    if (rl.IsKeyDown(rl.KeyboardKey.W)) { // Move camera forward (W key)
+        _manager^.camera.position.z -= 1
+        _manager^.camera.target.z -= 1
+    }
+    if (rl.IsKeyDown(rl.KeyboardKey.S)) { // Move camera backward (S key)
+        _manager^.camera.position.z += 1
+        _manager^.camera.target.z += 1
+    }
+    if (rl.IsKeyDown(rl.KeyboardKey.A)) { // Move camera left (A key)
+        _manager^.camera.position.x -= 1
+        _manager^.camera.target.x -= 1
+    }
+    if (rl.IsKeyDown(rl.KeyboardKey.D)) { // Move camera right (D key)
+        _manager^.camera.position.x += 1
+        _manager^.camera.target.x += 1
+    }
+    
+    // Zoom with the mouse wheel
+    _manager^.camera.fovy -= rl.GetMouseWheelMove() * 2.0
+
     if (rl.IsMouseButtonDown(rl.MouseButton.LEFT))
     {
         pos := rl.GetMousePosition()
@@ -144,7 +172,11 @@ Manager_draw :: proc
     _manager: ^Manager,
 )
 {
+    rl.DrawModel(_manager^.level, {0, 0, 0}, _manager^.levelScale, rl.WHITE)
     rl.DrawCubeWires({_manager^.groundDims.x, 0, _manager^.groundDims.y}, _manager^.groundDims.width, 0.1, _manager^.groundDims.height, rl.PINK)
+    // rl.DrawBoundingBox(rl.GetModelBoundingBox(_manager^.level), rl.RED)
+    normalMaterial := rl.LoadMaterialDefault()
+    // rl.DrawMesh(_manager^.level.meshes[0], normalMaterial, _manager^.level.transform)
     for id in _manager^.entities
     {
 
