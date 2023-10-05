@@ -9,41 +9,45 @@ Manager :: struct
     // global game font
     gameFont: rl.Font,
     // screen dimensions
-    screenWidth: int,
-    screenHeight: int,
+    screenWidth: i32,
+    screenHeight: i32,
     // game clock -> used for physics
     lastUpdateTime: f64,
     lastDrawTime: f64,
     // entity map
     entities: EntityMap,
-    camera: rl.Camera,
+    camera: rl.Camera2D,
     currentlySelected: [dynamic]^Entity,
     selecting: bool,
     selectionRect: rl.Rectangle,
     selectionStart: rl.Vector2,
     selectionEnd: rl.Vector2,
-    xVec: rl.Vector3,
-    yVec: rl.Vector3,
-    zVec: rl.Vector3,
     groundDims: rl.Rectangle,
-    level: rl.Model,
-    levelScale: f32
+    tileDims: rl.Vector2,
+    cameraOffset: rl.Vector2,
+    currentTilePos: rl.Vector2,
+    currentBuilding: i32,
+    numBuildings: i32,
+    buildings: [dynamic]Structure,
+    numPlacedBuildings: i32,
+    placedBuildings: [dynamic]Structure
 };
-
-// rl.LoadFontEx("resources/fonts/CascadiaCode/CascadiaCode.ttf", 20, 0, 250);
 
 Manager_new :: proc 
 (// global game font
     _gameFont: rl.Font,
-    _screenWidth: int,
-    _screenHeight: int,
+    _screenWidth: i32,
+    _screenHeight: i32,
     _lastUpdateTime: f64,
     _lastDrawTime: f64,
-    _camera: rl.Camera,
-    _level: rl.Model,
-    _levelScale: f32
+    _camera: rl.Camera2D,
+    _groundDims: rl.Rectangle,
+    _tileDims: rl.Vector2,
+    _numBuildings: i32,
+    _buildings: [dynamic]Structure
 ) -> Manager
 {
+
     manager := Manager {
         _gameFont,
         _screenWidth,
@@ -57,18 +61,16 @@ Manager_new :: proc
         rl.Rectangle{0, 0, 0, 0},
         rl.Vector2{0.0, 0.0},
         rl.Vector2{0.0, 0.0},
-        rl.Vector3{0.0, 0.0, 0.0},
-        rl.Vector3{0.0, 0.0, 0.0},
-        rl.Vector3{0.0, 0.0, 0.0},
-        rl.Rectangle{0.0, 0.0, 100.0, 100.0},
-        _level,
-        _levelScale
+        _groundDims,
+        _tileDims,
+        rl.Vector2{0, 0},
+        rl.Vector2{0, 0},
+        0,
+	    _numBuildings,
+        _buildings,
+        0,
+        make([dynamic]Structure)
     }
-
-    // manager.level.transform[0][0] *= _levelScale
-    // manager.level.transform[1][1] *= _levelScale
-    // manager.llevel.transform[2][2] *= _levelScale
-
 
     return manager
 }
@@ -81,7 +83,9 @@ Manager_addEntity :: proc
 {
     _manager^.entities[_entity^.id] = _entity 
 }
- Manager_deleteEntity :: proc (
+
+Manager_deleteEntity :: proc
+(
     _manager: ^Manager,
     _entity: ^Entity,
 )
@@ -95,75 +99,52 @@ Manager_update :: proc
     _dt: f32,
 )
 {
-    // rl.UpdateCamera(&(_manager^.camera), rl.CameraMode.FIRST_PERSON)
-    if (rl.IsKeyDown(rl.KeyboardKey.W)) { // Move camera forward (W key)
-        _manager^.camera.position.z -= 1
-        _manager^.camera.target.z -= 1
-    }
-    if (rl.IsKeyDown(rl.KeyboardKey.S)) { // Move camera backward (S key)
-        _manager^.camera.position.z += 1
-        _manager^.camera.target.z += 1
-    }
-    if (rl.IsKeyDown(rl.KeyboardKey.A)) { // Move camera left (A key)
-        _manager^.camera.position.x -= 1
-        _manager^.camera.target.x -= 1
-    }
-    if (rl.IsKeyDown(rl.KeyboardKey.D)) { // Move camera right (D key)
-        _manager^.camera.position.x += 1
-        _manager^.camera.target.x += 1
-    }
-    
-    // Zoom with the mouse wheel
-    _manager^.camera.fovy -= rl.GetMouseWheelMove() * 2.0
-
-    if (rl.IsMouseButtonDown(rl.MouseButton.LEFT))
+    if (rl.IsKeyDown(rl.KeyboardKey.RIGHT) || rl.IsKeyDown(rl.KeyboardKey.D))
     {
-        pos := rl.GetMousePosition()
-        if(!_manager^.selecting)
-        {
-            _manager^.selecting = true
-
-            _manager^.selectionRect.x = pos.x
-            _manager^.selectionRect.y = pos.y
-            _manager^.selectionStart = pos
-        }
-
-        _manager^.selectionEnd = pos
-
-        xOffset := _manager^.selectionEnd.x - _manager^.selectionStart.x
-        yOffset := _manager^.selectionEnd.y - _manager^.selectionStart.y
-
-        _manager^.selectionRect.width = abs(xOffset)
-        _manager^.selectionRect.height = abs(yOffset)
-
-        if (_manager^.selectionEnd.x < _manager^.selectionStart.x)
-        {
-            _manager.selectionRect.x = _manager^.selectionEnd.x
-        }
-        if (_manager^.selectionEnd.y < _manager^.selectionStart.y)
-        {
-            _manager.selectionRect.y = _manager^.selectionEnd.y
-        }
-    }    
-    else if (!rl.IsMouseButtonDown(rl.MouseButton.LEFT))
+        _manager^.cameraOffset.x += 0.5 * _dt;
+    }
+    if (rl.IsKeyDown(rl.KeyboardKey.LEFT) || rl.IsKeyDown(rl.KeyboardKey.A))
     {
-        _manager^.selectionRect.width = 0
-        _manager^.selectionRect.height = 0
-        _manager^.selecting = false
+        _manager^.cameraOffset.x -= 0.5 * _dt;
+    }
+    if (rl.IsKeyDown(rl.KeyboardKey.UP) || rl.IsKeyDown(rl.KeyboardKey.W))
+    {
+        _manager^.cameraOffset.y -= 0.5 * _dt;
+    }
+    if (rl.IsKeyDown(rl.KeyboardKey.DOWN) || rl.IsKeyDown(rl.KeyboardKey.S))
+    {
+        _manager^.cameraOffset.y += 0.5 * _dt;
     }
 
-    for id in _manager^.entities
-    {
+    _manager^.camera.zoom += rl.GetMouseWheelMove() * 0.2
 
-        entity := _manager^.entities[id]
-        if entity^.type == EntityType.UNIT
-        {
-            Unit_update(transmute(^Unit)entity, _manager, _dt)
-        }
-        else
-        {
-            Entity_update(entity, _manager, _dt)
-        }
+    _manager^.currentBuilding = abs(_manager^.currentBuilding + i32(rl.GetMouseWheelMove() * 1)) % (_manager^.numBuildings)
+
+	sWidth := rl.GetScreenWidth()
+	sHeight := rl.GetScreenHeight()
+
+    center := rl.Vector2{f32(sWidth/2) - _manager^.cameraOffset.x,
+                         f32(sHeight/2) - _manager^.cameraOffset.y
+    }
+
+    target := rl.Vector2{f32((_manager^.tileDims.x/2) * _manager^.groundDims.width),
+       f32((_manager^.tileDims.y/2) * _manager^.groundDims.height),
+    }
+
+    offSet := center - target - _manager^.cameraOffset
+
+    _manager^.camera = rl.Camera2D{center, target, 0.0, _manager^.camera.zoom}
+
+    Structure_update(&_manager^.buildings[_manager^.currentBuilding], _manager, _dt)
+
+    if (rl.IsMouseButtonPressed(rl.MouseButton.LEFT))
+    {
+    	fmt.println("appended")
+	    newStructure := _manager^.buildings[_manager^.currentBuilding]
+	    newStructure.placed = true
+	    inject_at_elem(&_manager^.placedBuildings, 0, newStructure)
+	    _manager^.numPlacedBuildings += i32(1);
+	    sort_sprites(&(_manager^.placedBuildings), _manager^.numPlacedBuildings)
     }
 }
 
@@ -172,22 +153,91 @@ Manager_draw :: proc
     _manager: ^Manager,
 )
 {
-    rl.DrawModel(_manager^.level, {0, 0, 0}, _manager^.levelScale, rl.WHITE)
-    rl.DrawCubeWires({_manager^.groundDims.x, 0, _manager^.groundDims.y}, _manager^.groundDims.width, 0.1, _manager^.groundDims.height, rl.PINK)
-    // rl.DrawBoundingBox(rl.GetModelBoundingBox(_manager^.level), rl.RED)
-    normalMaterial := rl.LoadMaterialDefault()
-    // rl.DrawMesh(_manager^.level.meshes[0], normalMaterial, _manager^.level.transform)
-    for id in _manager^.entities
+    for i: i32 = 0; i < i32(_manager^.groundDims.width)+1; i += 1
     {
+        for j: i32 = 0; j < i32(_manager^.groundDims.height)+1; j += 1
+        {
+            pos := rl.Vector2{f32(i * i32(_manager^.tileDims.x)), f32(j * i32(_manager^.tileDims.y))}
+            // rl.DrawPixel(i32(pos.x), i32(pos.y), rl.BLACK)
+            isopos := world_to_iso_transform(pos, _manager.tileDims)
+            topLeft := pos + rl.Vector2{-_manager^.tileDims.x/2, -_manager^.tileDims.y/2}
+            topLeft = world_to_iso_transform(topLeft, _manager.tileDims)
+            topRight := pos + rl.Vector2{_manager^.tileDims.x/2, -_manager^.tileDims.y/2}
+            topRight = world_to_iso_transform(topRight, _manager.tileDims)
+            bottomRight := pos + rl.Vector2{_manager^.tileDims.x/2, _manager^.tileDims.y/2}
+            bottomRight = world_to_iso_transform(bottomRight, _manager.tileDims)
+            bottomLeft := pos + rl.Vector2{-_manager^.tileDims.x/2, +_manager^.tileDims.y/2}
+            bottomLeft = world_to_iso_transform(bottomLeft, _manager.tileDims)
 
-        entity := _manager^.entities[id]
-        if entity^.type == EntityType.UNIT
-        {
-            Unit_draw(transmute(^Unit)entity)
-        }
-        else
-        {
-            Entity_draw(entity)
+            points: [^]rl.Vector2
+            b := [?]rl.Vector2{topLeft, topRight, bottomRight, bottomLeft, topLeft}
+            points = raw_data(b[:])
+            rl.DrawLineStrip(points, 5, rl.BLACK)
+            rl.DrawPixel(i32(isopos.x), i32(isopos.y), rl.BLUE)
         }
     }
+
+    // selection
+
+    mousePos := rl.GetMousePosition()
+    worldPosOG := rl.GetScreenToWorld2D(mousePos, _manager^.camera)
+    worldPos := worldPosOG
+    worldPos.x = worldPos.x < 0 ? (f32((i32(worldPos.x) / i32(_manager^.tileDims.x))) * _manager^.tileDims.x) - _manager^.tileDims.x/2 : (f32((i32(worldPos.x) / i32(_manager^.tileDims.x))) * _manager^.tileDims.x) + _manager^.tileDims.x/2
+    worldPos.y = worldPos.x < 0 ? f32(math.round_f32(f32(i32(worldPos.y) / i32(_manager^.tileDims.y/2)))) * _manager^.tileDims.y/2 : f32(math.round_f32(f32(i32(worldPos.y) / i32(_manager^.tileDims.y/2)))) * _manager^.tileDims.y/2 + _manager^.tileDims.y/2
+
+    selectRect := rl.Rectangle{worldPos.x - _manager^.tileDims.x/2, worldPos.y - _manager^.tileDims.y/4, _manager^.tileDims.x, _manager^.tileDims.y/2}
+
+    // rl.DrawPixel(i32(pos.x), i32(pos.y), rl.BLACK)
+    topCorner := worldPos + rl.Vector2{0, -_manager^.tileDims.y/4}
+    rightCorner := worldPos + rl.Vector2{_manager^.tileDims.x/2, 0}
+    bottomCorner := worldPos + rl.Vector2{0, _manager^.tileDims.y/4}
+    leftCorner := worldPos + rl.Vector2{-_manager^.tileDims.x/2, 0}
+
+    // top left corner
+    if rl.CheckCollisionPointTriangle(worldPosOG, leftCorner, rl.Vector2{selectRect.x, selectRect.y}, topCorner)
+    {
+    	worldPos.x -=  _manager^.tileDims.x/2
+    	worldPos.y -=  _manager^.tileDims.y/4
+    } else if rl.CheckCollisionPointTriangle(worldPosOG, topCorner, rl.Vector2{selectRect.x + _manager^.tileDims.x, selectRect.y}, rightCorner)
+    {
+    	worldPos.x +=  _manager^.tileDims.x/2
+    	worldPos.y -=  _manager^.tileDims.y/4
+    } else if rl.CheckCollisionPointTriangle(worldPosOG, rightCorner, rl.Vector2{selectRect.x + _manager^.tileDims.x, selectRect.y + _manager^.tileDims.y/2}, bottomCorner)
+    {
+    	worldPos.x +=  _manager^.tileDims.x/2
+    	worldPos.y +=  _manager^.tileDims.y/4
+    } else if rl.CheckCollisionPointTriangle(worldPosOG, bottomCorner, rl.Vector2{selectRect.x , selectRect.y + _manager^.tileDims.y/2}, leftCorner)
+    {
+    	worldPos.x -=  _manager^.tileDims.x/2
+    	worldPos.y +=  _manager^.tileDims.y/4
+    }
+
+    topCorner = worldPos + rl.Vector2{0, -_manager^.tileDims.y/4}
+    rightCorner = worldPos + rl.Vector2{_manager^.tileDims.x/2, 0}
+    bottomCorner = worldPos + rl.Vector2{0, _manager^.tileDims.y/4}
+    leftCorner = worldPos + rl.Vector2{-_manager^.tileDims.x/2, 0}
+
+    selectRect = rl.Rectangle{worldPos.x - _manager^.tileDims.x/2, worldPos.y - _manager^.tileDims.y/4, _manager^.tileDims.x, _manager^.tileDims.y/2}
+
+    points: [^]rl.Vector2
+    b := [?]rl.Vector2{topCorner, rightCorner, bottomCorner, leftCorner, topCorner}
+    points = raw_data(b[:])
+
+    // rl.DrawTriangleLines(leftCorner, rl.Vector2{selectRect.x, selectRect.y}, topCorner, rl.BLUE)
+    // rl.DrawTriangleLines(topCorner, rl.Vector2{selectRect.x + _manager^.tileDims.x, selectRect.y}, rightCorner, rl.BLUE)
+    // rl.DrawTriangleLines(rightCorner, rl.Vector2{selectRect.x + _manager^.tileDims.x, selectRect.y + _manager^.tileDims.y/2}, bottomCorner, rl.BLUE)
+    // rl.DrawTriangleLines(bottomCorner, rl.Vector2{selectRect.x , selectRect.y + _manager^.tileDims.y/2}, leftCorner, rl.BLUE)
+
+    rl.DrawLineStrip(points, 5, rl.RAYWHITE)
+
+	rl.DrawPixel(i32(worldPos.x), i32(worldPos.y), rl.PURPLE)
+    _manager^.currentTilePos = worldPos;
+
+    for i: i32 = 0; i < _manager^.numPlacedBuildings; i += 1
+    {
+	    Structure_draw(&(_manager^.placedBuildings[i]), _manager)
+
+    }
+    Structure_draw(&_manager^.buildings[_manager^.currentBuilding], _manager)
+    // rl.DrawRectangleLinesEx(selectRect, 1.0, rl.RED)
 }

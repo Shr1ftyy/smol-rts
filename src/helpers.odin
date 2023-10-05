@@ -2,6 +2,7 @@ package main
 
 import math "core:math"
 import intrinsics "core:intrinsics"
+import rl "vendor:raylib"
 
 cross_3d :: proc(a, b: $T/[3]$E) -> T
 where intrinsics.type_is_numeric(E) 
@@ -52,4 +53,29 @@ where intrinsics.type_is_numeric(E)
     newZ := -v[0]*sinY + v[1]*sinX*cosY + v[2]*cosX*cosY
 
     return T{newX, newY, newZ}
+}
+
+world_to_iso_transform :: proc(vec , tileDims: $T/[2]$E) -> T
+where intrinsics.type_is_numeric(E) 
+{
+    isoVec := vec
+    isoVec.x = ((vec.x - vec.y)/2) - (tileDims.x/2)
+    isoVec.y = ((vec.x + vec.y)/4)
+    return isoVec
+}
+
+sort_sprites :: proc (elems: ^[dynamic]Structure, count: i32) {
+    if(count > 1){
+        for i in 0..count - 2 {
+            for j in 0..count - 2 - i {
+                if elems^[j].position.y > elems^[j+1].position.y {
+                    temp := elems^[j+1]
+                    temp2 := elems^[j]
+                    elems^[j] = temp
+                    elems^[j+1] = temp2
+                }
+            }
+        }
+    }
+
 }
